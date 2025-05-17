@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✨ Cute Mask Detection ✨</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: linear-gradient(135deg, #fdf2f8 0%, #e9d5ff 100%);
+        }
+        .drop-zone {
+            border: 3px dashed #d8b4fe;
+            transition: all 0.3s ease;
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+        .drop-zone:hover {
+            border-color: #c084fc;
+            transform: scale(1.02);
+            box-shadow: 0 4px 20px rgba(192, 132, 252, 0.2);
+        }
+        .cute-shadow {
+            box-shadow: 0 4px 20px rgba(192, 132, 252, 0.2);
+        }
+        .cute-button {
+            background: linear-gradient(135deg, #f9a8d4 0%, #c084fc 100%);
+            transition: all 0.3s ease;
+        }
+        .cute-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(192, 132, 252, 0.4);
+        }
+        .result-box {
+            transition: all 0.3s ease;
+        }
+        .cute-container {
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+        }
+        .cute-title {
+        
+            background: linear-gradient(135deg, #f9a8d4 0%, #c084fc 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="min-h-screen py-12">
+    <div class="container mx-auto px-4">
+        <div class="max-w-2xl mx-auto">
+            <h1 class="text-4xl font-bold text-center mb-8 cute-title">✨ Mask Detection ✨</h1>
+            
+            <div class="cute-container cute-shadow p-8 mb-8">
+                <div id="upload-zone" class="drop-zone rounded-2xl p-8 text-center cursor-pointer">
+                    <div class="space-y-4">
+                        <svg class="mx-auto h-12 w-12 text-purple-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                            <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <div class="text-purple-600">
+                            <label for="file-upload" class="relative cursor-pointer rounded-md font-medium text-pink-500 hover:text-purple-500">
+                                <span>Upload a picture</span>
+                                <input id="file-upload" name="file" type="file" class="sr-only" accept="image/*">
+                            </label>
+                            <p class="pl-1">or drag and drop here! 🌸</p>
+                        </div>
+                        <p class="text-sm text-purple-400">PNG, JPG, GIF accepted ✨</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="preview-container" class="hidden cute-container cute-shadow p-8 mb-8">
+                <h2 class="text-2xl font-semibold mb-6 text-center text-purple-600">Preview 🌟</h2>
+                <div class="flex justify-center mb-6">
+                    <img id="preview-image" class="max-w-full h-auto rounded-2xl shadow-lg" src="" alt="Preview">
+                </div>
+                <button id="analyze-btn" class="w-full cute-button text-white py-3 px-6 rounded-xl font-semibold">
+                    ✨ Analyze Image ✨
+                </button>
+            </div>
+
+            <div id="result-container" class="hidden cute-container cute-shadow p-8">
+                <h2 class="text-2xl font-semibold mb-6 text-center text-purple-600">Result 🎀</h2>
+                <div id="result-content" class="text-center space-y-4">
+                    <div id="result-text" class="text-3xl font-bold mb-2"></div>
+                    <div id="confidence-text" class="text-lg text-purple-500"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadZone = document.getElementById('upload-zone');
+        const fileUpload = document.getElementById('file-upload');
+        const previewContainer = document.getElementById('preview-container');
+        const previewImage = document.getElementById('preview-image');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const resultContainer = document.getElementById('result-container');
+        const resultText = document.getElementById('result-text');
+        const confidenceText = document.getElementById('confidence-text');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            uploadZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            uploadZone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            uploadZone.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            uploadZone.style.transform = 'scale(1.02)';
+            uploadZone.style.borderColor = '#c084fc';
+        }
+
+        function unhighlight(e) {
+            uploadZone.style.transform = 'scale(1)';
+            uploadZone.style.borderColor = '#d8b4fe';
+        }
+
+        uploadZone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            handleFiles(files);
+        }
+
+        fileUpload.addEventListener('change', function(e) {
+            handleFiles(this.files);
+        });
+
+        function handleFiles(files) {
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type.startsWith('image/')) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        previewImage.src = e.target.result;
+                        previewContainer.classList.remove('hidden');
+                        resultContainer.classList.add('hidden');
+                    }
+                    reader.readAsDataURL(file);
+                }
+            }
+        }
+
+        analyzeBtn.addEventListener('click', async function() {
+            const file = fileUpload.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = '✨ Analyzing... ✨';
+            analyzeBtn.classList.add('opacity-75');
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                resultText.textContent = data.result + ' ' + (data.result === 'Wearing Mask' ? '😷' : '😊');
+                confidenceText.textContent = `Confidence: ${data.confidence}`;
+                resultContainer.classList.remove('hidden');
+
+                // Add appropriate color based on result
+                resultText.className = data.result === 'Wearing Mask' 
+                    ? 'text-3xl font-bold mb-2 text-pink-500'
+                    : 'text-3xl font-bold mb-2 text-purple-500';
+
+            } catch (error) {
+                alert('Error analyzing image: ' + error.message);
+            } finally {
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = '✨ Analyze Image ✨';
+                analyzeBtn.classList.remove('opacity-75');
+            }
+        });
+    </script>
+</body>
+</html> 
